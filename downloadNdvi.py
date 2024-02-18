@@ -1,57 +1,90 @@
-import ee
-import geemap
+import requests
+import os
+import rasterio
+from rasterio.transform import from_bounds
+from affine import Affine
 
-# Authenticate Earth Engine
-ee.Authenticate()
-ee.Initialize()
+# Define the access token
+access_token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ3dE9hV1o2aFJJeUowbGlsYXctcWd4NzlUdm1hX3ZKZlNuMW1WNm5HX0tVIn0.eyJleHAiOjE3MDgyODM0OTUsImlhdCI6MTcwODI3OTg5NSwianRpIjoiNTI0ZTlmZDctMzdlNy00M2FmLTlmZTQtNzNmZmI2MjQxN2IyIiwiaXNzIjoiaHR0cHM6Ly9zZXJ2aWNlcy5zZW50aW5lbC1odWIuY29tL2F1dGgvcmVhbG1zL21haW4iLCJzdWIiOiJmOWJiNDk4Yi0wMDZlLTRjNjAtOGY4Zi02M2UyMDA4ODZiYTYiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJkYmIwYzhkYi1jYzE4LTRmZTItYTNjNC1hYzcxNWRhMDFjNzciLCJzY29wZSI6ImVtYWlsIHByb2ZpbGUiLCJjbGllbnRIb3N0IjoiNzkuMTY5LjYxLjk2IiwiY2xpZW50SWQiOiJkYmIwYzhkYi1jYzE4LTRmZTItYTNjNC1hYzcxNWRhMDFjNzciLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InNlcnZpY2UtYWNjb3VudC1kYmIwYzhkYi1jYzE4LTRmZTItYTNjNC1hYzcxNWRhMDFjNzciLCJjbGllbnRBZGRyZXNzIjoiNzkuMTY5LjYxLjk2IiwiYWNjb3VudCI6ImMxYTkwZjQ4LWNhYjctNDJmNC1hNmQ4LWM5OTU0ZDBkNjk2ZSJ9.PmeIQa1c4KbTDYLAqSLnULp5GPBjBUc1qe8TQmtj_GzJTa_AXOZSbDipyEQb3zF4IOvombpTHyDhZ13qydXdP7XzHACht0fhqNqR1HpW5HCTE0XwTPO12wsNaWr9uV5fqJyTKbbPdpYVgj6wN3_PUxavvpObjZUEYfAjlOun4BKbFsStA56o5DlJtPSAN6JlBCzButWm7JtMBjGVvXwq6PTspMfeKo2fSlQK7XEWgztAluGvPKzoPBIx40RV0bhCXV64dOzsFn2fIW1zmI2zeJ9gX_N-HinWVcX29SIC1OqlECpJdRXmkkazg-SLBBcmhI_wkvzBhHLh-KlKwu324Q"
 
-# Define the region of interest for Multan city
-multan_bbox = ee.Geometry.Rectangle([71.3965, 30.1526, 71.5794, 30.2733])
+# Define the URL for downloading data
+download_url = "https://services.sentinel-hub.com/api/v1/process"
+bbox = [71.3965, 30.1526, 71.5794, 30.2733]
 
-# Filter Sentinel-2 imagery for Multan city using the bounding box and date range
-sentinel2 = ee.ImageCollection('COPERNICUS/S2') \
-    .filterBounds(multan_bbox) \
-    .filterDate('2010-01-01', '2023-12-31') \
-    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+# Define the output directory to save the files
+output_dir = r'C:\Users\AmmarYousaf\Fiver\GeospatialProject\multan_data'
 
-# Define bands for NDVI calculation
-red_band = 'B4'  # Red band
-nir_band = 'B8'  # Near-infrared band
+# Ensure the output directory exists
+os.makedirs(output_dir, exist_ok=True)
 
-# Define a function to calculate NDVI
-def calculate_ndvi(image):
-    return image.normalizedDifference([nir_band, red_band])
+# Define the payload template
+payload_template = {
+    "input": {
+        "bounds": {
+            "bbox": bbox
+        },
+        "data": [{
+            "type": "sentinel-2-l2a"
+        }]
+    },
+    "evalscript": """
+    //VERSION=3
 
-# Define a function to download NDVI images
-def download_ndvi_images(collection, years):
-    # Initialize a list to store NDVI images
-    ndvi_images = []
+    function setup() {
+      return {
+        input: ["B04", "B08"],
+        output: {
+          bands: 2
+        }
+      };
+    }
 
-    # Loop over the specified years
-    for year in years:
-        # Filter the collection for the current year
-        filtered_collection = collection.filterDate(f'{year}-01-01', f'{year+1}-01-01')
+    function evaluatePixel(
+      sample,
+      scenes,
+      inputMetadata,
+      customData,
+      outputMetadata
+    ) {
+      var ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
+      return [ndvi, ndvi, ndvi];
+    }
+    """
+}
 
-        # Get the median image from the filtered collection
-        median_image = filtered_collection.median()
+# Define the headers
+headers = {"Authorization": f"Bearer {access_token}"}
 
-        # Calculate NDVI for the median image
-        ndvi_image = calculate_ndvi(median_image)
+# Loop through each year from 2015 to 2023
+for year in range(2015, 2024):
+    # Update the time range for the current year
+    time_range = f"{year}-11-11", f"{year}-12-31"
 
-        # Clip the NDVI image to the region of interest
-        ndvi_image = ndvi_image.clip(multan_bbox)
+    # Update the payload with the new time range
+    payload = payload_template.copy()
+    payload["input"]["time"] = {
+        "from": time_range[0],
+        "to": time_range[1]
+    }
 
-        # Append the NDVI image to the list
-        ndvi_images.append(ndvi_image)
+    # Make the POST request to download data
+    response = requests.post(download_url, headers=headers, json=payload)
 
-        # Define the file path for the NDVI image
-        file_path = f'C:\\Users\\AmmarYousaf\\Fiver\\GeospatialProject\\multan_data\\ndvi_{year}.tif'
-
-        # Export the NDVI image
-        print(f"Downloading NDVI image for {year}")
-        geemap.ee_export_image(ndvi_image, filename=file_path, scale=30)
-
-    return ndvi_images
-
-# Download NDVI images for the years 2010, 2015, 2020, and 2023
-download_ndvi_images(sentinel2, [2015, 2017, 2019,2021, 2023])
+    # Check if request was successful
+    if response.status_code == 200:
+        # Save the response content to a file
+        filename = os.path.join(output_dir, f"ndvi_data_{year}.tif")
+        with rasterio.MemoryFile(response.content) as memfile:
+            with memfile.open() as src:
+                transform = from_bounds(bbox[0], bbox[1], bbox[2], bbox[3], src.width, src.height)
+                profile = src.profile
+                profile.update({
+                    'driver': 'GTiff',
+                    'crs': 'EPSG:4326',
+                    'transform': transform
+                })
+                with rasterio.open(filename, 'w', **profile) as dst:
+                    dst.write(src.read())
+        print(f"NDVI data for {year} downloaded and saved as GeoTIFF successfully.")
+    else:
+        print(f"Failed to download NDVI data for {year}: {response.text}")
