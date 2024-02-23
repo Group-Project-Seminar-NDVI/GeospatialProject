@@ -6,8 +6,7 @@
     <title>Leaflet Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <!-- Include Leaflet.draw plugin -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <style>
         #map {
             height: 95vh;
@@ -24,46 +23,47 @@
             z-index: 1000;
         }
     </style>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
     <div id="map"></div>
     <div id="checkboxes"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script>
-        var mymap = L.map('map').setView([30.1575, 71.5249], 10);
-    
+        var map = L.map('map').setView([30.1575, 71.5249], 10);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(mymap);
+        }).addTo(map);
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
         var drawControl = new L.Control.Draw({
-        edit: {
-            featureGroup: drawnItems
-        }
+            edit: {
+                featureGroup: drawnItems
+            }
         });
         map.addControl(drawControl);
 
         // Event listener for when a new layer is created
         map.on(L.Draw.Event.CREATED, function (e) {
-        var layer = e.layer;
-        drawnItems.addLayer(layer);
+            var layer = e.layer;
+            drawnItems.addLayer(layer);
         });
-    
+
         var geojsonLayers = {}; // Object to store GeoJSON layers, keyed by year
-    
+
         function updateData(year) {
             var isChecked = document.getElementById(year).checked;
-    
+
             // Remove existing layers regardless of checkbox state to ensure a clean state
-            Object.keys(geojsonLayers).forEach(function(existingYear) {
-                mymap.removeLayer(geojsonLayers[existingYear]);
+            Object.keys(geojsonLayers).forEach(function (existingYear) {
+                map.removeLayer(geojsonLayers[existingYear]);
                 delete geojsonLayers[existingYear];
             });
-    
+
             // If the checkbox is unchecked, simply exit after cleaning up
             if (!isChecked) return;
-    
+
             fetch('http://127.0.0.1:5000/api/data?year=' + encodeURIComponent(year))
                 .then(response => response.json())
                 .then(data => {
@@ -78,7 +78,7 @@
                             }
                         }))
                     };
-    
+
                     // Create and add a GeoJSON layer to the map
                     geojsonLayers[year] = L.geoJSON(validGeoJSON, {
                         style: function (feature) {
@@ -89,14 +89,14 @@
                                 layer.bindPopup('ID: ' + feature.properties.id);
                             }
                         }
-                    }).addTo(mymap);
+                    }).addTo(map);
                 })
                 .catch(error => console.error('Error fetching data:', error));
-            
+
             // Uncheck all other checkboxes
             uncheckOtherCheckboxes(year);
         }
-    
+
         // Uncheck all other checkboxes except the current year
         function uncheckOtherCheckboxes(currentYear) {
             unique_years.forEach(year => {
@@ -105,17 +105,22 @@
                 }
             });
         }
-    
+
         // Dynamically generate checkboxes
-        var unique_years = ['ndvi_data_2015_green', 'ndvi_data_2016_green', 'ndvi_data_2017_green','ndvi_data_2018_green','ndvi_data_2019_green','ndvi_data_2020_green','ndvi_data_2021_green','ndvi_data_2022_green','ndvi_data_2023_green']; // Replace with your unique years
-        var checkboxes = unique_years.map(year => `
-            <input type="checkbox" id="${year}" onclick="updateData('${year}');">
-            <label for="${year}">${year}</label><br>
-        `).join('');
-    
-        document.getElementById('checkboxes').innerHTML = checkboxes;
+        // Dynamically generate checkboxes
+var unique_years = ['NDVI_2020_green', 'NDVI_2021_green', 'NDVI_2022_green']; // Replace with your unique years
+var checkboxes = unique_years.map(year => {
+    var yearLabel = year.match(/\d{4}/)[0]; // Extract the year portion using regex
+    return `
+        <input type="checkbox" id="${year}" onclick="updateData('${year}');">
+        <label for="${year}">${yearLabel}</label><br>
+    `;
+}).join('');
+
+document.getElementById('checkboxes').innerHTML = checkboxes;
+
+
+       
     </script>
-    
-    
 </body>
 </html>

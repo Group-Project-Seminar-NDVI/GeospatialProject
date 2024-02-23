@@ -174,4 +174,4 @@ def main():
 if __name__ == "__main__":
     main()
     
-webbrowser.open_new_tab("map.html")
+
