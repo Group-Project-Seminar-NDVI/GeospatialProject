@@ -8,7 +8,7 @@ from shapely.geometry import shape
 import fiona
 from ExtractGeojson import extract_green_spaces
 from Download_CalculateNDVI import calculate_and_save_ndvi, download_and_save_band
-from Database_Connection import geojson_to_shapely
+from Database_Connection import geojson_to_shapely_and_area
 from sentinelhub import SHConfig, BBox, CRS
 
 def configure_sentinelhub():
@@ -70,25 +70,22 @@ def main():
             extract_green_spaces(ndvi_file, output_file)
             
             # Load GeoJSON into database
-folder_path = 'C:\\Users\\AmmarYousaf\\Fiver\\GeospatialProject\\output_geojson'
-        
-# Iterate over GeoJSON files in the folder
-for filename in os.listdir(folder_path):
-    if filename.endswith('.geojson'):
-        year = '_'.join(filename.split('_')[:-1])  # Extract year from filename
-        geojson_path = os.path.join(folder_path, filename)
-        # Convert GeoJSON to Shapely geometry
-        shapely_features = geojson_to_shapely(geojson_path, year)
-        # Insert Shapely features into the database
-        for shapely_feature in shapely_features:
-            # Get the WKT representation of the geometry
-            wkt_geometry = shapely_feature.wkt
-            # Create a PolygonFeature object and add it to the session
-            feature = PolygonFeature(geometry=wkt_geometry, year=year)
-            session.add(feature)
+        folder_path = 'C:\\Users\\AmmarYousaf\\Fiver\\GeospatialProject\\output_geojson'
+        engine = create_engine('postgresql://postgres:postgres@localhost:5432/postgis_34_sample')
+        Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
 
-    
-    # Commit changes and close session
+    for filename in os.listdir(output_dir):
+        if filename.endswith('.geojson'):
+            year = filename.split('_')[1]  # Assuming filename format includes the year
+            geojson_path = os.path.join(output_dir, filename)
+            shapely_features = geojson_to_shapely_and_area(geojson_path, year)
+            for shapely_feature, area_m2 in shapely_features:
+                wkt_geometry = shapely_feature.wkt
+                feature = PolygonFeature(geometry=wkt_geometry, year=year, area_m2=area_m2)
+                session.add(feature)
+
     session.commit()
     session.close()
 
