@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaflet Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Include Leaflet.draw plugin -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <style>
         #map {
@@ -22,6 +21,13 @@
             border-radius: 5px;
             z-index: 1000;
         }
+
+        .custom-popup {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -30,8 +36,7 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script>
-        var map = L.map('map').setView([30.1575, 71.5249], 10);
-
+        var map = L.map('map').setView([30.1575, 71.5249], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -44,60 +49,59 @@
         });
         map.addControl(drawControl);
 
-        // Event listener for when a new layer is created
         map.on(L.Draw.Event.CREATED, function (e) {
             var layer = e.layer;
             drawnItems.addLayer(layer);
         });
 
-        var geojsonLayers = {}; // Object to store GeoJSON layers, keyed by year
+        var geojsonLayers = {};
 
         function updateData(year) {
             var isChecked = document.getElementById(year).checked;
-
-            // Remove existing layers regardless of checkbox state to ensure a clean state
             Object.keys(geojsonLayers).forEach(function (existingYear) {
                 map.removeLayer(geojsonLayers[existingYear]);
                 delete geojsonLayers[existingYear];
             });
-
-            // If the checkbox is unchecked, simply exit after cleaning up
             if (!isChecked) return;
-
             fetch('http://127.0.0.1:5000/api/data?year=' + encodeURIComponent(year))
                 .then(response => response.json())
                 .then(data => {
-                    // Format the fetched data as a valid GeoJSON object
                     var validGeoJSON = {
                         "type": "FeatureCollection",
                         "features": data.geojson_data.map(item => ({
                             "type": "Feature",
                             "geometry": item.geometry,
                             "properties": {
-                                "id": item.id
+                                "id": item.id,
+                                "area_m2": item.area_m2 // Directly use the value
                             }
                         }))
                     };
-
-                    // Create and add a GeoJSON layer to the map
-                    geojsonLayers[year] = L.geoJSON(validGeoJSON, {
+                    var layer = L.geoJSON(validGeoJSON, {
                         style: function (feature) {
-                            return { color: 'blue' }; // Adjust styling as needed
+                            return { color: 'blue' };
                         },
                         onEachFeature: function (feature, layer) {
                             if (feature.properties && feature.properties.id) {
-                                layer.bindPopup('ID: ' + feature.properties.id);
+                                var popupContent = `<div style="font-weight: bold;">ID: ${feature.properties.id}</div>`;
+                                if (feature.properties.area_m2) {
+                                    // Display the area directly without conversion
+                                    popupContent += `<div>Area (m²): ${feature.properties.area_m2}</div>`;
+                                }
+                                layer.bindPopup(popupContent, {
+                                    minWidth: 200,
+                                    className: 'custom-popup'
+                                });
                             }
                         }
                     }).addTo(map);
+                    map.fitBounds(layer.getBounds());
+                    geojsonLayers[year] = layer;
                 })
                 .catch(error => console.error('Error fetching data:', error));
-
-            // Uncheck all other checkboxes
             uncheckOtherCheckboxes(year);
         }
-
-        // Uncheck all other checkboxes except the current year
+        
         function uncheckOtherCheckboxes(currentYear) {
             unique_years.forEach(year => {
                 if (year !== currentYear) {
@@ -105,22 +109,17 @@
                 }
             });
         }
-
-        // Dynamically generate checkboxes
-        // Dynamically generate checkboxes
-var unique_years = ['NDVI_2020_green', 'NDVI_2021_green', 'NDVI_2022_green']; // Replace with your unique years
-var checkboxes = unique_years.map(year => {
-    var yearLabel = year.match(/\d{4}/)[0]; // Extract the year portion using regex
-    return `
-        <input type="checkbox" id="${year}" onclick="updateData('${year}');">
-        <label for="${year}">${yearLabel}</label><br>
-    `;
-}).join('');
-
-document.getElementById('checkboxes').innerHTML = checkboxes;
-
-
-       
+    
+        var unique_years = ['NDVI_2020_green', 'NDVI_2021_green', 'NDVI_2022_green'];
+        var checkboxes = unique_years.map(year => {
+            var yearLabel = year.match(/\d{4}/)[0];
+            return `
+                <input type="checkbox" id="${year}" onclick="updateData('${year}');">
+                <label for="${year}">${yearLabel}</label><br>
+            `;
+        }).join('');
+    
+        document.getElementById('checkboxes').innerHTML = checkboxes;
     </script>
 </body>
 </html>

@@ -6,7 +6,7 @@ from geoalchemy2 import Geometry
 from geoalchemy2.shape import from_shape
 from shapely.geometry import shape
 import fiona
-from ExtractGeojson import extract_green_spaces
+from ExtractGeojson import extract_green_spaces,determine_utm_zone
 from Download_CalculateNDVI import calculate_and_save_ndvi, download_and_save_band
 from Database_Connection import geojson_to_shapely_and_area
 from sentinelhub import SHConfig, BBox, CRS
@@ -33,7 +33,7 @@ class PolygonFeature(Base):
     id = Column(Integer, primary_key=True)
     geometry = Column(Geometry(geometry_type='POLYGON', srid=4326))
     year = Column(String)  # Assuming year is a string like '2021'
-    area_m2 = Column(Float)  # Change to Float for decimal values
+    area_m2 = Column(Integer)  # Change to Float for decimal values
 
 
 
@@ -61,7 +61,7 @@ def main():
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
-
+    
     # Processing each NDVI file
     for file in os.listdir(ndvi_dir):
         if file.endswith('.tif') and 'NDVI' in file.upper():

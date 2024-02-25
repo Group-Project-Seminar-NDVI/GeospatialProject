@@ -44,7 +44,9 @@ def extract_green_spaces(ndvi_file, output_file):
         gdf_utm = gdf.to_crs(utm_crs)
 
         # Now calculate the area in square meters
-        gdf_utm['area_m2'] = gdf_utm['geometry'].area
+        
+        gdf_utm['area_m2'] = gdf_utm['geometry'].area.astype(int)
+
 
         # Exclude the largest polygon
         gdf_utm = gdf_utm[gdf_utm['area_m2'] != gdf_utm['area_m2'].max()]
