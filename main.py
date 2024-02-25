@@ -62,6 +62,26 @@ def main():
     Session = sessionmaker(bind=engine)
     session = Session()
     
+def determine_utm_zone(gdf):
+    # Calculate the centroids of the GeoDataFrame in EPSG:4326
+    centroids = gdf.geometry.centroid.to_crs(epsg=4326)
+    
+    # If there's more than one centroid, calculate the mean position
+    if len(centroids) > 1:
+        mean_x = centroids.x.mean()
+        mean_y = centroids.y.mean()
+    else:
+        # For a single centroid, just use its position
+        mean_x = centroids.x
+        mean_y = centroids.y
+    
+    # Calculate UTM zone from the mean longitude
+        utm_zone = int((mean_x + 180) / 6) + 1
+        hemisphere = 'north' if mean_y > 0 else 'south'
+        utm_crs = f'EPSG:{"326" if hemisphere == "north" else "327"}{utm_zone:02d}'
+    
+        return utm_crs
+
     # Processing each NDVI file
     for file in os.listdir(ndvi_dir):
         if file.endswith('.tif') and 'NDVI' in file.upper():
