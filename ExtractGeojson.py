@@ -47,8 +47,8 @@ def extract_green_spaces(ndvi_file, output_file):
         
         gdf_utm['area_m2'] = gdf_utm['geometry'].area.astype(int)
 
-
-        # Exclude the largest polygon
+        total_area = gdf_utm['area_m2'].sum()
+            # Exclude the largest polygon
         gdf_utm = gdf_utm[gdf_utm['area_m2'] != gdf_utm['area_m2'].max()]
 
         # Optionally, convert back to EPSG:4326 if needed for GeoJSON compatibility
