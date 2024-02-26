@@ -24,7 +24,7 @@ def get_geojson_data():
         return jsonify({'error': 'Year parameter is missing'}), 400
     
     # Execute SQL query to retrieve data for the selected year
-    sql_query = f"SELECT id,area_m2, geometry FROM polygon_features WHERE year = '{year}'"
+    sql_query = f"SELECT id,area_m2,total_area, geometry FROM polygon_features WHERE year = '{year}'"
     gdf = gpd.read_postgis(sql_query, conn, geom_col='geometry')
     
     # Convert GeoDataFrame geometry to GeoJSON-like Python dictionaries

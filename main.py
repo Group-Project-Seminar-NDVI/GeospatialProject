@@ -8,7 +8,7 @@ from shapely.geometry import shape
 import fiona
 from ExtractGeojson import extract_green_spaces,determine_utm_zone
 from Download_CalculateNDVI import calculate_and_save_ndvi, download_and_save_band
-from Database_Connection import geojson_to_shapely_and_area
+from Database_Connection import calculate_total_area_by_year
 from sentinelhub import SHConfig, BBox, CRS
 
 def configure_sentinelhub():
@@ -34,6 +34,7 @@ class PolygonFeature(Base):
     geometry = Column(Geometry(geometry_type='POLYGON', srid=4326))
     year = Column(String)  # Assuming year is a string like '2021'
     area_m2 = Column(Integer)  # Change to Float for decimal values
+    total_area = Column(Integer)  # Added column for the total area as Integer
 
 
 
@@ -96,15 +97,22 @@ def determine_utm_zone(gdf):
         Session = sessionmaker(bind=engine)
         session = Session()
 
-    for filename in os.listdir(output_dir):
-        if filename.endswith('.geojson'):
-            year = filename.split('_')[1]  # Assuming filename format includes the year
-            geojson_path = os.path.join(output_dir, filename)
-            shapely_features = geojson_to_shapely_and_area(geojson_path, year)
-            for shapely_feature, area_m2 in shapely_features:
-                wkt_geometry = shapely_feature.wkt
-                feature = PolygonFeature(geometry=wkt_geometry, year=year, area_m2=area_m2)
-                session.add(feature)
+folder_path = 'C:\\Users\\AmmarYousaf\\Fiver\\GeospatialProject\\output_geojson'
+total_area_by_year = calculate_total_area_by_year(folder_path)
+
+for filename in os.listdir(folder_path):
+    if filename.endswith('.geojson'):
+        # Correctly extract the year from the filename
+        year = filename.split('_')[-1].replace('.geojson', '')
+        geojson_path = os.path.join(folder_path, filename)
+        with fiona.open(geojson_path, 'r') as src:
+            for feature in src:
+                geom = shape(feature['geometry'])
+                area_m2 = int(feature['properties'].get('area_m2', 0))
+                wkt_geometry = geom.wkt
+                total_area = total_area_by_year.get(year, 0)
+                feature = PolygonFeature(geometry=wkt_geometry, area_m2=area_m2, year=year, total_area=total_area)
+                
 
     session.commit()
     session.close()

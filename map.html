@@ -173,7 +173,7 @@
             });
         }
     
-        var unique_years = ['NDVI_2020_green', 'NDVI_2021_green', 'NDVI_2022_green'];
+        var unique_years = ['2020', '2021', '2022'];
         barLabel = [2020,2021,2022]
         var checkboxes = unique_years.map(year => {
             var yearLabel = year.match(/\d{4}/)[0];
@@ -193,7 +193,7 @@
                 labels: barLabel,
                 datasets: [{
                     label: 'Total Area(Sq m) by Year',
-                    data: [1000, 2000, 3000], // Placeholder data, replace with actual values
+                    data: [1553168, 3639891, 7270327], // Placeholder data, replace with actual values
                     backgroundColor: [
                         'rgba(255, 99, 132, 0.5)',
                         'rgba(54, 162, 235, 0.5)',
