@@ -1,13 +1,2 @@
-os
-sqlalchemy
-shapely
-geoalchemy2
-fiona
-ExtractGeojson
-Download_CalculateNDVI
-Database_Connection
-sentinelhub
-flask
-psycopg2
-geopandas
-flask_cors
+ee
+geemap

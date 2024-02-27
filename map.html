@@ -15,13 +15,14 @@
         }
 
         #map {
-            height: 100vh; /* Adjusted for the height of other elements */
+            height: calc(100vh - 50px); /* Adjust based on the height of your top panel */
             position: relative;
+            top: 35px; /* Adjust this value based on the actual height of your top panel */
         }
 
         #controls {
             position: absolute;
-            top: 80px;
+            top: 120px;
             right: 10px;
             background-color: rgba(255, 255, 255, 0.8);
             padding: 10px;
@@ -60,6 +61,29 @@
             z-index: 1000;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
+        #top-panel {
+            width: 100%;
+            background-color: #007bff; /* Adjust the background color as needed */
+            color: #fff; /* Adjust text color as needed */
+            padding: 10px 0;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 2000;
+        }
+        
+        #moving-title {
+            display: inline-block;
+            white-space: nowrap;
+            animation: moveTitle 10s linear infinite;
+        }
+        
+        @keyframes moveTitle {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+        
     </style>
 </head>
 <body>
@@ -72,6 +96,10 @@
         <div id="checkboxes"></div>
         <button id="toggle-chart-button" onclick="toggleChartVisibility()">Toggle Chart</button>
     </div>
+    <div id="top-panel">
+        <div id="moving-title">Visualization of Changes in Green Areas  </div>
+    </div>
+    
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
