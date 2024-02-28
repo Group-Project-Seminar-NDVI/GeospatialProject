@@ -5,13 +5,13 @@ import rasterio
 from rasterio.transform import from_bounds
 from datetime import datetime
 
-# Configuration
+# Configuration 
 config = SHConfig()
 config.sh_client_id = 'dbb0c8db-cc18-4fe2-a3c4-ac715da01c77'  # Replace with your Sentinel Hub client ID
 config.sh_client_secret = 'xw4ZAm0eeYjoTlmu0ftCjhIlDNU3AwlT'  # Replace with your actual Sentinel Hub client secret
 config.save()
 
-# Define the geographical bounds of your area of interest in WGS84
+# Define the geographical bounds of your area of interest in decimal degrees
 multan_coords = [71.417, 30.157, 71.529, 30.211]  # Example coordinates for Multan, Pakistan
 multan_bbox = BBox(bbox=multan_coords, crs=CRS.WGS84)
 resolution = 10  # Desired resolution in meters, adjust as needed
