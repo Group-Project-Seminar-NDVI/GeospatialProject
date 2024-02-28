@@ -1,5 +1,5 @@
 ## Data and Method
-This project used sentinel-2 satellite images and boundaries of a few selected study areas in polygon geojson format. Sentinel-2 is the land monitoring mission from the EU Copernicus Programme that consists of the constellation of twin satellites Sentinel-2A and 2B. They provide fine-resolution optical imageries with global coverage and a revisit time of 5 days with satellite constellation. (Earth Online European Space Agency, 2014). Sentinel 2 images have a range of spatial resolutions, but we used the bands with 10m resolutions in this project.
+This project used sentinel-2 satellite images and boundaries of a few selected study areas in polygon geojson format. Sentinel-2 is the land monitoring mission from the EU Copernicus Programme that consists of the constellation of twin satellites Sentinel-2A . They provide fine-resolution optical imageries with global coverage and a revisit time of 5 days with satellite constellation. (Earth Online European Space Agency, 2014). Sentinel 2 images have a range of spatial resolutions, but we used the bands with 10m resolutions in this project.
 
 The backend was developed using Flask python. The downloading and processing of images are carried out by functions in the main file. The “app.py” file is the flask application created to extract data from the database. The front end, which enables the visualization of the results was developed using HTML, CSS and JavaScript. The web map interface incorporates Leaflet, which is an open-source JavaScript library.
 ## Installation
@@ -43,11 +43,11 @@ Follow these steps to run the app.
 
 #### Working
 main.py file did these steps
-1. Create the folders in your localhost to downloaded bands, Cliped images and processed Indices.
-2. Look the S2 images for your study area  according to your given time period then download the specific bands (Band-2348) instead of whole image and put them in the folder "download" (main.py will create that folder automatically)
+1. Create the folders in your localhost to downloaded Clipped bands and processed NDVI.
+2. Look the S2 images for your study area  according to your given time period then download the specific bands (Band-48) instead of whole image and put them in the folder "band_data" (main.py will create that folder automatically)
 3. Getting the specifc metadata for downloaded image and upload that data in database.
-4. Clip the bands with your uploaded geoJSON files (Study area) put these clip bands in the folder "processed"(main.py will create that folder automatically)
-5. Calculate the indices and put these indices in the folder "indices" (main.py will create that folder automatically)
+4. Clip the bands with your Given BBox (Study area) put these clip bands in the folder "Band_Data"(main.py will create that folder automatically)
+5. Calculate the NDVI and put  in the same  folder (main.py will create that folder automatically)
 
 
 ## Database Connection
@@ -91,5 +91,5 @@ He earned a bachelor's degree in GIS from NUST, Islamabad, Pakistan and now he i
 He is also pursuing a master's degree in Geospatial Technologies at NOVA IMS, Universidade NOVA de Lisboa, Portugal.
 
 3. Flavio Vata :
- he is also pursuing a master's degree in Geospatial Technologies at NOVA IMS, Universidade NOVA de Lisboa, Portugal.
+ He is also pursuing a master's degree in Geospatial Technologies at NOVA IMS, Universidade NOVA de Lisboa, Portugal.
 
